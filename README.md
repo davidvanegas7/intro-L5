@@ -62,17 +62,89 @@ Cuando queramos crear un semillero para la BD, utilizamos la instrucción:
 `php artisan make:seeder DescriptionTableSeeder
 `
 
+Hay que agregar las lineas a los llamados en la clase DatabaseSeeder asi:
 
+```js
+Model::unguard();
+//Agregado
+$this->call(DescriptionTableSeeder::class);
+//Fin Agregado
+Model::reguard();
+```
 
+y en cada TableSeeder donde quieras agregar datos a la base de datos, escribes:
 
+```js
+public function run()
+{
+  $descriptions = ['desc1','desc1','desc1',];
+  array_map(function ($body){
+      $now = date('Y-m-d H:i:s', strtotime('now'));
+      DB::table('products')->insert([
+          'body' => $body,
+          'created_at' => $now,
+          'updated_at' => $now,
+      ]);
+  }, $descriptions);
 
+}
+```
 
+Para ejecutar las clases seed, y crear esos inserts en la BD escribimos:
 
+`php artisan db:seed
+`
 
+Si queremos ejecutar una base o tabla especifica, utilizamos el comando
 
+`php artisan db:seed --class=DescriptionTableSeeder
+`
 
+-------------------------------------
+**Modelos**
 
+Para cuando queramos crear nuestros modelos en el proyecto Laravel, vamos a utilizar la instrucción:
 
+`php artisan make:model nombremodelo
+`
+
+Eso nos creara el modelo en la carpeta Providers de app.
+
+Si tenemos por ejemplo dos modelos y uno tiene un foraneo de otro (Product <- Description)
+
+agregaremos la funcion en Product.PHP:
+
+```js
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Product extends Model
+{
+  public function descriptions()
+  {
+      return $this->hasMany(Description::class);
+  }
+}
+```
+
+Esto lo hacemos para que Eloquent conozca que un valor de la base de datos es un foraneo
+
+Para hacer la contrapartida en Description.php
+
+```js
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Description extends Model
+{
+  public function product()
+  {
+      return $this->belongsTo(Product::class);
+  }
+}
+```
 
 
 
