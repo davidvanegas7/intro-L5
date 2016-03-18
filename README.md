@@ -419,11 +419,76 @@ public function update(Request $request, $id)
 ```
 
 
+**Validaciones**
+
+Si queremos validar algunos campos recibidos, escribiremos la sentencia validate en nuestros metodos.
 
 
+```js
+public function store(Request $request, $id)
+{
+    $this->validate($request, [
+        'name' => 'required|unique:products'
+    ]);
+
+    return Product::create([
+        'name' => $request->input('name')
+    ]);
+}
+```
+
+**Testeo (Parte 3)**
+
+Añadiremos las siguientes validaciones para verificar en caso de que el campo name este vacio y en caso de haber nombre duplicado:
 
 
+```js
+public function testProductCreationFailsWhenNameNotProvided()
+{
+    $product = factory(\App\Product::class)->make(['name'=> '']);
 
+    $this->post(route('api.products.store'), $product->jsonSerialize(), $this->jsonHeaders())
+        ->seeJson(['name'=> ['The name field is required']])
+        ->assertResponseStatus(422);
+}
+
+public function testProductCreationFailsWhenNameNotUnique()
+{
+    $name = 'feets';
+    $product1 = factory(\App\Product::class)->create(['name'=> $name]);
+    $product2 = factory(\App\Product::class)->make(['name'=> $name]);
+
+    $this->post(route('api.products.store'), $product->jsonSerialize(), $this->jsonHeaders())
+        ->seeJson(['name'=> ['The name has already been taken']])
+        ->assertResponseStatus(422);
+}
+```
+
+**Service Providers**
+
+Para ejecutar proveedores nos vamos a la carpeta app/providers, en ella hay archivos como AppServiceProvider en el que podemos crear validaciones que queremos ejecutar en cualquier parte del proyecto.
+
+En este caso verificaremos que es una palabra y de que termine en algunos sufijos determinados:
+
+```js
+use Illuminate\Support\Facades\Validator;
+
+public function boot()
+{
+    Validator::extend('productQuality', function($attribute, $value, $parameters){
+        return !preg_match('/[^A-Za-z]/', $value) && preg_match('/eets|eats|uites|etes|ites|ettes$/', value);
+    });
+}
+```
+
+Ahora como hemos agregado una nueva validacion, debe tener un mensaje de error que sea entendible, para eso vamos a la carpeta resources/lang/en/validation.php
+
+Aqui agregaremos nuestra nueva validacion y le añadiremos un mensaje de error en caso de que suceda, asi (debes tener en cuenta el snake_case):
+
+` 'product_quality'  => 'The product name provided not match our standard of excellence',
+`
+
+Entonces para cuando estemos escribiendo nuestras reglas de validacion, tambien tendremos que escribir la que acabamos de crear
 
 
 
