@@ -146,13 +146,66 @@ class Description extends Model
 }
 ```
 
+-------------------------------------
+**Rutas**
+
+La parte de rutas queda alojada en la direccion app/Http/routes.php
+
+Para hacer pruebas sin tener que configurar un servidor en el momento, utilizamos el comando:
+
+`php artisan serve --host=192.168.64.166
+`
+
+O la ip que tu quieras ponerle.
+
+las rutas pueden ser algo así
+
+```js
+Route::get('/', function(){
+    return view('welcome');
+});
+
+Route::get('descriptions', function(){
+    return App\Description::all();
+});
+```
+
+la ruta descriptions retornara todas las descripciones que esten alojadas en la BD.
+
+Cuando queramos usar esa ruta en otras partes de la aplicacion, como por ejemplo en las vistas, es necesario agregar la siguiente modificación:
+
+```js
+Route::get('descriptions',['as'=>'products', function(){
+    return App\Description::all();
+}]);
+```
+
+En las rutas existe una instruccion llamada group que me permite contener varias rutas dentro de una misma, ya sea para darle algun prefijo a la direccion web o para hacer verificaciones de seguridad. Para agregarle el prefijo api, haremos el siguiente cambio
 
 
+```js
+Route::group(['prefix' => 'api'], function(){
+  Route::get('descriptions',['as'=>'products', function(){
+    return App\Description::all();
+  }]);
+});
+```
+
+----------------------------------
+**Testeo**
+
+En nuestro directorio app/tests se alojan las pruebas tests de nuestra aplicacion, vamos a crear una prueba en el archivo ExampleTest.php:
 
 
+```js
+public function testDescriptionsList()
+{
+    $this->get(route('products'))
+        ->assertResponseOk();
+}
+```
 
-
-
+Esto nos confirmara que la ruta que hemos creado, tenga una respuesta satisfactoria (un codigo 200).
 
 
 
