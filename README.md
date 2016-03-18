@@ -11,13 +11,18 @@ Laravel 5 crea el proyecto con el comando:
 
 Entre sus diferencias mas notorias esta el hecho de que (al igual que symfony2) crea un archivo env donde estan los datos de tu base de datos y tu gestor de emails.
 
+
+
 **Pruebas en servidor propio**
+
 Para hacer pruebas sin tener que configurar un servidor en el momento, utilizamos el comando:
 
 `php artisan serve --host=192.168.64.166
 `
 
 O la ip que tu quieras ponerle.
+
+
 
 **Migraciones**
 
@@ -157,6 +162,7 @@ class Description extends Model
 ```
 
 
+
 **Rutas**
 
 La parte de rutas queda alojada en la direccion app/Http/routes.php
@@ -213,6 +219,7 @@ Route::resource('products', 'ProductController', ['only'=>['index, store']]);
 ```
 
 
+
 **Testeo**
 
 En nuestro directorio app/tests se alojan las pruebas tests de nuestra aplicacion, vamos a crear una prueba en el archivo ExampleTest.php:
@@ -234,6 +241,7 @@ Para poder ejecutarla, escribiremos en consola, el comando:
 `
 
 
+
 **Controladores**
 
 Para crear controladores de una clase, utilizaremos la siguiente instrucción (preferiblemente con la primera letra del modelo en mayuscula):
@@ -242,6 +250,186 @@ Para crear controladores de una clase, utilizaremos la siguiente instrucción (p
 `
 
 Esto creara nuestros controladores en el directorio app/Http/Controllers
+
+
+Hay que añadir tambien la siguiente linea use para que se puedan traer los objetos dell modelo Description o el que queramos:
+
+```js
+use App\Http\Descriptions
+
+public function index()
+{
+    return Description::all();
+}
+```
+
+Cuando queramos crear consultas en un valor Foraneo, escribimos la siguiente funcion en la clase de la cual es el foraneo:
+
+```js
+public function scopeOfProduct($query, $productId)
+{
+    return $query->where('product_id', $productId);
+}
+```
+
+Mientras en el controlador utilizamos la linea:
+
+```js
+public function index()
+{
+    return Description::ofProduct($productId)->get();
+}
+```
+
+Pero mostrar toda esa cantidad de datos podria traernos problemas cuando tenemos tablas con miles de datos, por lo cual siempre es bueno paginar para no traer cantidades grandes de datos y dividir mejor la información:
+
+```js
+public function index()
+{
+    return Description::ofProduct($productId)->get()->paginate();
+}
+
+//en el otro controlador
+public function index()
+{
+    return Description::paginate();
+}
+```
+
+Esto agregara otros metadatos cuando hagas la consulta en tu navegador.
+
+
+
+**Factory - Fabrica**
+
+Laravel viene con un directorio database/Factories donde se alojan las fabricas que se han creado para el proyecto.
+
+Estas Fabricas sirven para hacer inserts en una BD que se crea en memoria para testear que realmente si se esta añadiendo datos correctamente.
+
+En el archivo modelFactory.php puedes crear las siguientes fabricas:
+
+```js
+$factory->define(App\Description::class, function($faker){
+    return [
+        'name' => $faker->word,
+        //tambien puede ser
+        'body' => $faker->text,
+    ];
+});
+```
+
+Donde tienes que agregar los campos de tu modelo.
+De aqui, eso nos llevara a una nueva etapa en los testeos.
+
+
+
+**Testeo (Parte 2)**
+
+En nuestra clase de ExampleTest, modificaremos la funcion para recibir datos de una fabrica y revisarlos.
+
+Si aun no hemos agregado la instruccion use DatabaseTransactions; tenemos que agregarla
+
+```js
+use DatabaseTransactions;
+
+public function testProductsList()
+{
+    $products = factory(\App\Product::class, 3)->create();
+
+    $this->get(route('api.products.index'))
+        ->assertResponseOk();
+
+    array_map(function ($product){
+        $this->seeJson($product->jsonSerialize());
+    }, $products->all());
+}
+```
+
+De esta manera es posible testear inserts y luego verificar si realmente esta guardando los datos.
+
+
+
+**Guardar datos en la BD**
+
+Para guardar datos en el controlador, utilizamos la funcion store, en esta añadimos el request como parametro (si no lo tiene aun)
+y luego escribimos lo siguiente:
+
+```js
+public function store(Request $request)
+{
+    return Product::create([
+        'name' => $request->input('name')
+    ]);
+}
+```
+
+Sin embargo, esto no nos guardara ningun valor, para verificarlo podemos hacer un *test* que nos verifique así:
+
+```js
+public function testProductCreaction()
+{
+    $product = factory(\App\Product::class)->make(['name'=>'beets']);
+
+    $this->post(route('api.products.store'), $product->jsonSerialize(), $this->jsonHeaders())
+        ->seeInDatabase('products', ['name'=>$product->name])
+        ->assertResponseOk();
+
+}
+```
+
+Pero nos devolvera error, esto porque en el modelo de la BD aun no hemos establecido que cambos son llenables.
+
+
+Asi que en el modelo, escribiremos la linea.
+
+```js
+    public $fillable = ['name'];
+```
+
+
+
+**Actualizar datos en la BD**
+
+En este caso, crearemos una prueba test para el caso en el que se quiera modificar, recordando que cuando actualizas un valor, se utiliza la funcion PUT:
+
+```js
+public function testProductUpdate()
+{
+    $product = factory(\App\Product::class)->make(['name'=>'beets']);
+    $product->name = 'feets';
+
+    $this->put(route('api.products.update', ['products' => $product->id]), $product->jsonSerialize(), $this->jsonHeaders())
+        ->seeInDatabase('products', ['name'=>$product->name])
+        ->assertResponseOk();
+}
+```
+
+Si lo probamos, nos dara error, pero es porque aun no hemos definido su funcion en el controlador:
+
+```js
+public function update(Request $request, $id)
+{
+    $product = Product::findOrFail($id);
+
+
+    $product->update([
+        'name' => $request->input('name')
+    ]);
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
