@@ -11,6 +11,16 @@ Laravel 5 crea el proyecto con el comando:
 
 Entre sus diferencias mas notorias esta el hecho de que (al igual que symfony2) crea un archivo env donde estan los datos de tu base de datos y tu gestor de emails.
 
+**Pruebas en servidor propio**
+Para hacer pruebas sin tener que configurar un servidor en el momento, utilizamos el comando:
+
+`php artisan serve --host=192.168.64.166
+`
+
+O la ip que tu quieras ponerle.
+
+**Migraciones**
+
 para comenzar a migrar las tablas, utilizamos
 
 `php artisan make:migration create_descriptions_table --create=descriptions
@@ -100,7 +110,7 @@ Si queremos ejecutar una base o tabla especifica, utilizamos el comando
 `php artisan db:seed --class=DescriptionTableSeeder
 `
 
--------------------------------------
+
 **Modelos**
 
 Para cuando queramos crear nuestros modelos en el proyecto Laravel, vamos a utilizar la instrucción:
@@ -146,17 +156,16 @@ class Description extends Model
 }
 ```
 
--------------------------------------
+
 **Rutas**
 
 La parte de rutas queda alojada en la direccion app/Http/routes.php
 
-Para hacer pruebas sin tener que configurar un servidor en el momento, utilizamos el comando:
 
-`php artisan serve --host=192.168.64.166
+Para listar la cantidad de rutas:
+
+`php artisan route:list
 `
-
-O la ip que tu quieras ponerle.
 
 las rutas pueden ser algo así
 
@@ -191,7 +200,19 @@ Route::group(['prefix' => 'api'], function(){
 });
 ```
 
-----------------------------------
+Sin embargo cuando requieras poner las rutas de un controlador, deberas tener en cuenta la instruccion resource:
+
+```js
+Route::resource('products', 'ProductController');
+```
+
+Pero si queremos limitar las opciones a escoger en el controlador, haremos la siguiente modificación:
+
+```js
+Route::resource('products', 'ProductController', ['only'=>['index, store']]);
+```
+
+
 **Testeo**
 
 En nuestro directorio app/tests se alojan las pruebas tests de nuestra aplicacion, vamos a crear una prueba en el archivo ExampleTest.php:
@@ -206,6 +227,27 @@ public function testDescriptionsList()
 ```
 
 Esto nos confirmara que la ruta que hemos creado, tenga una respuesta satisfactoria (un codigo 200).
+
+Para poder ejecutarla, escribiremos en consola, el comando:
+
+`phpunit
+`
+
+
+**Controladores**
+
+Para crear controladores de una clase, utilizaremos la siguiente instrucción (preferiblemente con la primera letra del modelo en mayuscula):
+
+`php artisan make:controller NombremodeloController
+`
+
+Esto creara nuestros controladores en el directorio app/Http/Controllers
+
+
+
+
+
+
 
 
 
